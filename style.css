@@ -1,0 +1,115 @@
+:root {
+    --color-primary: #1E90FF;
+    --color-background: #EEEEFF;
+    --color-surface: #FFFFFF;
+    --color-surface-alt: #DDDDDD;
+    --color-border: #444444;
+    --color-cell-border: #777777; 
+
+    --color-mine: #FF3333;
+    --color-flag: #FF9999;
+    --color-grid: #BBBBBB;
+
+    --color-num-1: blue;
+    --color-num-2: green;
+    --color-num-3: red;
+    --color-num-4: navy;
+    --color-num-5: maroon;
+    --color-num-6: teal;
+    --color-num-7: black;
+
+    --cell-size: 30px;
+    --border-radius: 8px;
+    --space-xs: 4px;
+    --space-s: 8px;
+    --font-family: system-ui, sans-serif;
+}
+
+* { 
+    box-sizing: border-box; 
+    margin:0; 
+    padding:0 
+}
+
+body { 
+    font-family: var(--font-family); 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh; 
+    background: var(--color-background); 
+}
+
+.game-container { 
+    width: max-content; 
+    border: 2px solid var(--color-border); 
+    border-radius: var(--border-radius); 
+    background: var(--color-surface); 
+    overflow: hidden; 
+}
+
+header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: var(--space-s) calc(var(--space-s) * 1.5);
+    background: var(--color-border); 
+    color: #fff; 
+}
+
+header select,
+header button { 
+    margin-left: var(--space-s); 
+    padding: var(--space-xs) var(--space-s); 
+}
+
+.grid { 
+    display: grid; 
+    background: var(--color-grid); 
+}
+
+.cell {
+    width : var(--cell-size); 
+    height: var(--cell-size); 
+    border: 1px solid var(--color-cell-border);
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    cursor: pointer; 
+    user-select: none; 
+    font-weight: bold;
+}
+
+.cell.revealed { 
+    background: var(--color-surface-alt); 
+    cursor: default; 
+}
+
+.cell.flagged { 
+    background: var(--color-flag); 
+}
+.cell.mine { 
+    background: var(--color-mine); 
+}
+
+.cell.num1 { 
+    color: var(--color-num-1); 
+}
+.cell.num2 { 
+    color: var(--color-num-2); 
+}
+.cell.num3 { 
+    color: var(--color-num-3); 
+}
+.cell.num4 { 
+    color: var(--color-num-4); 
+}
+.cell.num5 { 
+    color: var(--color-num-5); 
+}
+.cell.num6 { 
+    color: var(--color-num-6); 
+}
+.cell.num7, .cell.num8 { 
+    color: var(--color-num-7); 
+}
