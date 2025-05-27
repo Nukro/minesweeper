@@ -1,3 +1,5 @@
+const STORAGE_KEY = 'minesweeperState';
+
 const gridElem = document.getElementById('grid');
 const mineCountEl = document.getElementById('mine-count');
 const timerEl = document.getElementById('timer');
@@ -9,6 +11,99 @@ let grid = [];
 let timerId = null;
 let elapsed = 0;
 let firstClick = true;
+
+function saveGameState() {
+    const plainGrid = grid.map(row =>
+        row.map(cell => ({
+            mine: cell.mine,
+            neighborMines: cell.neighborMines,
+            revealed: cell.revealed,
+            flagged: cell.flagged
+        }))
+    );
+    const state = {
+        rows, cols, totalMines,
+        elapsed, firstClick,
+        plainGrid,
+        difficulty: diffSelect.value
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function rebuildData(state) {
+    rows = state.rows;
+    cols = state.cols;
+    totalMines = state.totalMines;
+    diffSelect.value = state.difficulty;
+
+    grid = state.plainGrid.map((row, r) =>
+        row.map((pc, c) => ({
+            row: r, col: c,
+            mine: pc.mine,
+            neighborMines: pc.neighborMines,
+            revealed: pc.revealed,
+            flagged: pc.flagged
+        }))
+    );
+}
+
+function restoreUI(state) {
+    elapsed = state.elapsed;
+    timerEl.textContent = `Time: ${elapsed}s`;
+    firstClick = state.firstClick;
+
+    const flaggedCount = grid.flat().filter(c => c.flagged).length;
+    mineCountEl.textContent = `Mines: ${totalMines - flaggedCount}`;
+}
+
+function loadGameState() {
+    const state = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (!state) return false;
+
+    rebuildData(state);
+
+    renderGrid();
+    grid.forEach((row, r) =>
+        row.forEach((cell, c) => {
+            const div = gridElem.children[r * cols + c];
+            if (cell.revealed) {
+                div.classList.add('revealed');
+                if (cell.mine) {
+                    div.classList.add('mine');
+
+                } else if (cell.neighborMines) {
+                    div.textContent = cell.neighborMines;
+                    div.classList.add(`num${cell.neighborMines}`);
+                }
+            }
+            if (cell.flagged) {
+                div.classList.add('flagged');
+            }
+        })
+    );
+
+    restoreUI(state)
+
+    if (!firstClick) starTimer();
+    return true;
+}
+
+function clearGameState() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+
+window.addEventListener('load', () => {
+  if (localStorage.getItem(STORAGE_KEY)) {
+    if (confirm('Resume your last game?')) {
+      loadGameState();
+      return;
+    }
+    clearGameState();
+  }
+  initGame();
+});
+
 
 function initGame() {
     clearInterval(timerId);
@@ -69,6 +164,7 @@ function renderGrid() {
             div.dataset.c = c;
 
             div.addEventListener('click', onCellClick);
+            div.addEventListener('contextmenu', onCellRightClick);
             gridElem.append(div);
         }
     }
@@ -77,6 +173,7 @@ function renderGrid() {
 function starTimer() {
     timerId = setInterval(() => {
         elapsed++; timerEl.textContent = `Time: ${elapsed}s`;
+        saveGameState();
     }, 1000);
 }
 
@@ -92,6 +189,22 @@ function onCellClick(e) {
         firstClick = false;
     }
     revealCell(r,c);
+    saveGameState();
+    checkWin();
+}
+
+function onCellRightClick(e) {
+    e.preventDefault();
+    const r = +e.currentTarget.dataset.r;
+    const c = +e.currentTarget.dataset.c;
+    const cell = grid[r][c];
+
+    if (cell.revealed) return;
+    cell.flagged = !cell.flagged;
+    e.currentTarget.classList.toggle('flagged', cell.flagged);
+    const flaggedCount = grid.flat().filter(c => c.flagged).length;
+    mineCountEl.textContent = `Mines: ${totalMines - flaggedCount}`;
+    saveGameState();
 }
 
 function placeMines(avoidR, avoidC) {
@@ -136,6 +249,7 @@ function revealCell(r,c) {
 
     if (cell.mine) {
         div.classList.add('mine');
+        gameOver(false);
         return;
     }
 
@@ -155,5 +269,35 @@ function revealCell(r,c) {
         }
     }
 }
+
+function gameOver(won) {
+    clearInterval(timerId);
+    grid.flat().forEach(cell => {
+        if (cell.mine) {
+            const idx = cell.row * cols + cell.col;
+            const div = gridElem.children[idx];
+            div.classList.add('mine', 'revealed');
+        }
+    });
+    setTimeout(() => {
+        alert(won ? 'You win!' : 'Game Over')
+        clearGameState();
+    }, 50);
+}
+
+
+function checkWin() {
+    const unrevealed = grid.flat().filter(c => !c.revealed).length;
+    if (unrevealed === totalMines) {
+        gameOver(true);
+    }
+}
+
+
+restartBtn.addEventListener('click', () => {
+    clearGameState();
+    initGame();
+});
+diffSelect.addEventListener('change', initGame);
 
 initGame();
