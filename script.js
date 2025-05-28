@@ -6,11 +6,23 @@ const timerEl = document.getElementById('timer');
 const diffSelect = document.getElementById('difficulty');
 const restartBtn = document.getElementById('restart');
 
+const audio = {
+  click: new Audio('sounds/click.mp3'),
+  flag:  new Audio('sounds/flag.mp3'),
+  boom:  new Audio('sounds/explosion.mp3'),
+  win:   new Audio('sounds/win.mp3'),
+  bgm:   new Audio('sounds/bgm.mp3')
+};
+
+audio.bgm.loop = true;
+
 let rows, cols, totalMines;
 let grid = [];
 let timerId = null;
 let elapsed = 0;
 let firstClick = true;
+let selectedRow = 0;
+let selectedCol = 0;
 
 function saveGameState() {
     const plainGrid = grid.map(row =>
@@ -85,6 +97,7 @@ function loadGameState() {
     restoreUI(state)
 
     if (!firstClick) starTimer();
+    highlightSelectedCell();
     return true;
 }
 
@@ -93,16 +106,19 @@ function clearGameState() {
 }
 
 
-window.addEventListener('load', () => {
-  if (localStorage.getItem(STORAGE_KEY)) {
-    if (confirm('Resume your last game?')) {
-      loadGameState();
-      return;
+function highlightSelectedCell() {
+    gridElem.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+    const idx = selectedRow * cols + selectedCol;
+    const cellDiv = gridElem.children[idx];
+
+    if (cellDiv) {
+        cellDiv.classList.add('selected');
+        cellDiv.scrollIntoView({
+            block: 'nearest', 
+            inline: 'nearest' 
+        });
     }
-    clearGameState();
-  }
-  initGame();
-});
+}
 
 
 function initGame() {
@@ -131,6 +147,9 @@ function initGame() {
     mineCountEl.textContent = `Mines: ${totalMines}`;
     grid = createEmptyGrid(rows, cols);
     renderGrid();
+    selectedRow = 0;
+    selectedCol = 0;
+    highlightSelectedCell();
 }
 
 function createEmptyGrid(customRows, customCols) {
@@ -178,12 +197,16 @@ function starTimer() {
 }
 
 function onCellClick(e) {
+    audio.click.currentTime = 0;
+    audio.click.play();
     const r = +e.currentTarget.dataset.r;
     const c = +e.currentTarget.dataset.c;
     const cell = grid[r][c];
 
     if (cell.flagged || cell.revealed) return;
     if (firstClick) {
+        audio.bgm.currentTime = 0;
+        audio.bgm.play();
         placeMines(r,c);
         starTimer();
         firstClick = false;
@@ -194,6 +217,8 @@ function onCellClick(e) {
 }
 
 function onCellRightClick(e) {
+    audio.flag.currentTime = 0;
+    audio.flag.play();
     e.preventDefault();
     const r = +e.currentTarget.dataset.r;
     const c = +e.currentTarget.dataset.c;
@@ -248,6 +273,8 @@ function revealCell(r,c) {
     div.classList.add('revealed');
 
     if (cell.mine) {
+        audio.boom.currentTime = 0;
+        audio.boom.play();
         div.classList.add('mine');
         gameOver(false);
         return;
@@ -280,7 +307,14 @@ function gameOver(won) {
         }
     });
     setTimeout(() => {
-        alert(won ? 'You win!' : 'Game Over')
+        if (won) {
+            audio.win.currentTime = 0;
+            audio.win.play();
+            alert('You win!');
+        } else {
+            audio.bgm.pause();
+            alert('Game Over');
+        }
         clearGameState();
     }, 50);
 }
@@ -292,6 +326,59 @@ function checkWin() {
         gameOver(true);
     }
 }
+
+
+window.addEventListener('load', () => {
+  if (localStorage.getItem(STORAGE_KEY)) {
+    if (confirm('Resume your last game?')) {
+        loadGameState();
+        return;
+    }
+    clearGameState();
+  }
+  initGame();
+});
+
+
+window.addEventListener('keydown', e => {
+    switch (e.key) {
+        case 'ArrowUp':
+            if (selectedRow > 0) selectedRow--;
+            e.preventDefault();
+            break;
+        case 'ArrowDown':
+            if (selectedRow < rows - 1) selectedRow++;
+            e.preventDefault();
+            break;
+        case 'ArrowLeft':
+            if (selectedCol > 0) selectedCol--;
+            e.preventDefault();
+            break;
+        case 'ArrowRight':
+            if (selectedCol < cols - 1) selectedCol++;
+            e.preventDefault();
+            break;
+        case 'Enter':
+        case ' ':
+            const clickEvent = new MouseEvent('click');
+            gridElem.children[selectedRow * cols + selectedCol].dispatchEvent(clickEvent);
+            e.preventDefault();
+            break;
+        case 'f':
+        case 'F':
+            const ctxEvent = new MouseEvent('contextmenu', { bubbles: true });
+            gridElem.children[selectedRow * cols + selectedCol].dispatchEvent(ctxEvent);
+            e.preventDefault();
+            break;
+        case 'r':
+        case 'R':
+            restartBtn.click();
+            break;
+        default:
+            return;
+    }
+    highlightSelectedCell();
+});
 
 
 restartBtn.addEventListener('click', () => {

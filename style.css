@@ -25,6 +25,20 @@
     --font-family: system-ui, sans-serif;
 }
 
+@keyframes gradientShift {
+    0%   { background-position:   0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position:   0% 50%; }
+}
+
+@keyframes float {
+    0%   { transform: translateY(0px); }
+    25%  { transform: translateY(-8px); }
+    50%  { transform: translateY(0px); }
+    75%  { transform: translateY(4px); }
+    100% { transform: translateY(0px); }
+}
+
 * { 
     box-sizing: border-box; 
     margin:0; 
@@ -37,7 +51,9 @@ body {
     justify-content: center; 
     align-items: center; 
     min-height: 100vh; 
-    background: var(--color-background); 
+    background: linear-gradient(270deg, var(--color-background), #fbc14d, #ffe89e, var(--color-background));
+    background-size: 800% 800%;
+    animation: gradientShift 30s ease infinite;
 }
 
 .game-container { 
@@ -46,6 +62,9 @@ body {
     border-radius: var(--border-radius); 
     background: var(--color-surface); 
     overflow: hidden; 
+    margin-left: 20px;
+    margin-right: 20px;
+    animation: float 8s ease-in-out infinite;
 }
 
 header { 
@@ -55,16 +74,22 @@ header {
     padding: var(--space-s) calc(var(--space-s) * 1.5);
     background: var(--color-border); 
     color: #fff; 
+    flex-wrap: wrap;
+    row-gap: 10px;
+    column-gap: 10px;
 }
 
 header select,
-header button { 
-    margin-left: var(--space-s); 
-    padding: var(--space-xs) var(--space-s); 
+header button,
+header input { 
+    padding: var(--space-s) var(--space-s); 
+    border: 1px solid black;
+    cursor: pointer;
 }
 
-header .status {
-    margin-left: var(--space-s);
+#timer {
+    width: 100px;
+    display: block;
 }
 
 .grid { 
@@ -98,6 +123,10 @@ header .status {
 }
 .cell.mine { 
     background: var(--color-mine); 
+}
+.cell.selected {
+  border: 1px solid gold;
+  outline-offset: -1px;
 }
 
 .cell.num1 { 
