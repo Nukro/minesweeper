@@ -1,4 +1,6 @@
 const STORAGE_KEY = 'minesweeperState';
+const STORAGE_KEY_STATS = 'minesweeperStats';
+const STORAGE_KEY_HS = 'minesweeperHighscores';
 
 const gridElem = document.getElementById('grid');
 const mineCountEl = document.getElementById('mine-count');
@@ -23,6 +25,13 @@ let elapsed = 0;
 let firstClick = true;
 let selectedRow = 0;
 let selectedCol = 0;
+
+let stats = JSON.parse(localStorage.getItem(STORAGE_KEY_STATS)) || { played: 0, won: 0 };
+let highscores = JSON.parse(localStorage.getItem(STORAGE_KEY_HS)) || {
+    beginner: null,
+    intermediate: null,
+    expert: null
+};
 
 function saveGameState() {
     const plainGrid = grid.map(row =>
@@ -191,7 +200,8 @@ function renderGrid() {
 
 function starTimer() {
     timerId = setInterval(() => {
-        elapsed++; timerEl.textContent = `Time: ${elapsed}s`;
+        elapsed++; 
+        timerEl.textContent = `Time: ${elapsed}s`;
         saveGameState();
     }, 1000);
 }
@@ -307,9 +317,11 @@ function gameOver(won) {
         }
     });
     setTimeout(() => {
+        recordStats(won);
         if (won) {
             audio.win.currentTime = 0;
             audio.win.play();
+            checkHighscore(elapsed);
             alert('You win!');
         } else {
             audio.bgm.pause();
@@ -326,6 +338,56 @@ function checkWin() {
         gameOver(true);
     }
 }
+
+
+function saveStats() {
+    localStorage.setItem(STORAGE_KEY_STATS, JSON.stringify(stats));
+}
+
+function saveHighscores() {
+    localStorage.setItem(STORAGE_KEY_HS, JSON.stringify(highscores));
+}
+
+function updateStatsUI() {
+    document.getElementById('games-played').textContent = stats.played;
+    document.getElementById('games-won').textContent = stats.won;
+    const rate = stats.played ? Math.round((stats.won / stats.played) * 100) : 0;
+    document.getElementById('win-rate').textContent = rate + '%';
+}
+
+function updateHighscoresUI() {
+    document.getElementById('hs-beginner').textContent = highscores.beginner !== null ? highscores.beginner + 's' : '–';
+    document.getElementById('hs-intermediate').textContent = highscores.intermediate !== null ? highscores.intermediate + 's' : '–';
+    document.getElementById('hs-expert').textContent = highscores.expert !== null ? highscores.expert + 's' : '–';
+}
+
+function getDifficulty() {
+    return diffSelect.value;
+}
+
+function recordStats(won) {
+    stats.played++;
+    if (won) stats.won++;
+    saveStats();
+    updateStatsUI();
+}
+
+function checkHighscore(timeSec) {
+    const diff = getDifficulty();
+    const best = highscores[diff];
+    if (best === null || timeSec < best) {
+        highscores[diff] = timeSec;
+        saveHighscores();
+        updateHighscoresUI();
+        alert(`Neuer Bestzeit (${diff}): ${timeSec}s!`);
+    }
+}
+
+
+window.addEventListener('DOMContentLoaded', () => {
+    updateStatsUI();
+    updateHighscoresUI();
+});
 
 
 window.addEventListener('load', () => {
