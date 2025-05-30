@@ -7,6 +7,7 @@ const mineCountEl = document.getElementById('mine-count');
 const timerEl = document.getElementById('timer');
 const diffSelect = document.getElementById('difficulty');
 const restartBtn = document.getElementById('restart');
+const safeClickBtn = document.getElementById("safeClickBtn");
 
 const audio = {
   click: new Audio('sounds/click.mp3'),
@@ -25,8 +26,11 @@ let elapsed = 0;
 let firstClick = true;
 let selectedRow = 0;
 let selectedCol = 0;
-
-let stats = JSON.parse(localStorage.getItem(STORAGE_KEY_STATS)) || { played: 0, won: 0 };
+let safeClicksRemaining = 3;
+let stats = JSON.parse(localStorage.getItem(STORAGE_KEY_STATS)) || { 
+    played: 0, 
+    won: 0 
+};
 let highscores = JSON.parse(localStorage.getItem(STORAGE_KEY_HS)) || {
     beginner: null,
     intermediate: null,
@@ -159,6 +163,8 @@ function initGame() {
     selectedRow = 0;
     selectedCol = 0;
     highlightSelectedCell();
+    safeClicksRemaining = 3;
+    setupSafeClick();
 }
 
 function createEmptyGrid(customRows, customCols) {
@@ -381,6 +387,48 @@ function checkHighscore(timeSec) {
         updateHighscoresUI();
         alert(`Neuer Bestzeit (${diff}): ${timeSec}s!`);
     }
+}
+
+function safeClick() {
+    if (safeClicksRemaining <= 0) {
+        alert("Keine Safe-Clicks mehr übrig!");
+        return;
+    }
+    
+    const candidates = [];
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const cell = grid[r][c];
+            if (!cell.revealed && !cell.flagged && !cell.mine) {
+                candidates.push({ r, c });
+            }
+        }
+    }
+
+    if (candidates.length === 0) {
+        alert("Kein sicheres Feld gefunden!");
+        return;
+    }
+
+    const { r, c } = candidates[Math.floor(Math.random() * candidates.length)];
+    const cell = grid[r][c];
+    cell.revealed = true;
+
+    const idx = r * cols + c;
+    const div = gridElem.children[idx];
+    div.classList.add('revealed');
+    if (cell.neighborMines > 0) {
+        div.textContent = cell.neighborMines;
+        div.classList.add(`num${cell.neighborMines}`);
+    }
+
+    safeClicksRemaining--;
+    safeClickBtn.textContent = `Safe Click (${safeClicksRemaining})`;
+}
+
+function setupSafeClick() {
+  safeClickBtn.textContent = `Safe Click (${safeClicksRemaining})`;
+  safeClickBtn.addEventListener("click", safeClick);
 }
 
 
