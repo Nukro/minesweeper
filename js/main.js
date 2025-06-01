@@ -105,6 +105,13 @@ function onCellRightClick(e) {
 
     if (cell.revealed) return;
     cell.flagged = !cell.flagged;
+
+    if (cell.flagged) {
+        e.currentTarget.classList.add('flagged');
+    } else {
+        e.currentTarget.classList.remove('flagged');
+    }
+
     saveGameState(buildStateObject());
     
     const flaggedCount = grid.flat().filter(c => c.flagged).length;
@@ -142,13 +149,15 @@ function calculateNeighbors() {
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             let count = 0;
-            dirs.forEach(dr => dirs.forEach(dc => {
-                if (dr || dc) {
-                    const nr = r + dr;
-                    const nc = c + dc;
-                    if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc].mine) count++;
-                }
-            }));
+            dirs.forEach(dr => 
+                dirs.forEach(dc => {
+                    if (dr || dc) {
+                        const nr = r + dr;
+                        const nc = c + dc;
+                        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc].mine) count++;
+                    }
+                })
+            );
             grid[r][c].neighborMines = count;
         }
     }
